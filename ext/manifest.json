@@ -2,7 +2,7 @@
   "name": "Super Meet Mute",
   "short_name": "SuperMeetMute",
   "author": "Adrian Palumbo, from Matt Simonis",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "manifest_version": 2,
   "description": "Fast & global muting/unmuting for Google Meet.",
   "icons": {
