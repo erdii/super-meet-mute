@@ -92,35 +92,49 @@ window.onbeforeunload = (event) => {
   chrome.extension.sendMessage({ message: "disconnected" });
 };
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  muted = isMuted();
-  if (request && request.command && request.command === "toggle_mute") {
-    muted = !muted;
-    sendKeyboardCommand();
-  } else if (request && request.command && request.command === "mute") {
-    if (!muted) {
-      muted = !muted;
-      sendKeyboardCommand();
-    }
-  } else if (request && request.command && request.command === "unmute") {
-    if (muted) {
-      muted = !muted;
-      sendKeyboardCommand();
-    }
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  if (request == null || request.command == null || request.isMac) {
+    console.error("request or request.command or request.isMac were not set", request);
+    return;
   }
 
-  sendResponse({ message: muted ? "muted" : "unmuted" });
+  console.log("received request:", request);
+
+  muted = isMuted();
+  let changed = false;
+
+  switch (request.command) {
+    case "toggle_mute":
+      changed = true;
+      break;
+    case "mute":
+      if (!muted) {
+        changed = true;
+      }
+      break;
+    case "unmute":
+      if (muted) {
+        changed = true;
+      }
+      break;
+  }
+
+  console.log("mute changed?", changed);
+  if (changed) {
+    sendKeyboardCommand(request.isMac);
+    sendResponse({ message: muted ? "muted" : "unmuted" });
+  }
 });
 
-const keydownEvent = new KeyboardEvent("keydown", {
-  key: "d",
-  code: "KeyD",
-  metaKey: true,
-  charCode: 100,
-  keyCode: 100,
-  which: 100,
-});
-
-function sendKeyboardCommand() {
-  document.dispatchEvent(keydownEvent);
+function sendKeyboardCommand(isMac) {
+  document.dispatchEvent(new KeyboardEvent("keydown", {
+    key: "d",
+    code: "KeyD",
+    // use either ctrl or meta key depending on platform os
+    ctrlKey: !isMac,
+    metaKey: isMac,
+    charCode: 100,
+    keyCode: 100,
+    which: 100,
+  }));
 }

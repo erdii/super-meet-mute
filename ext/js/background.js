@@ -1,24 +1,30 @@
-chrome.commands.onCommand.addListener((command) => {
-  handleCommand(command)
-})
+// get user os (to know if we need to send (ctrl or meta) + d key combination)
+// before registering event handlers
+chrome.runtime.getPlatformInfo((platformInfo) => {
+  let isMac = platformInfo.os === "mac";
 
-chrome.runtime.onMessage.addListener(
-  (request, sender, sendResponse) => {
+  chrome.commands.onCommand.addListener((command) => {
+    handleCommand(isMac, command)
+  })
+  
+  chrome.runtime.onMessage.addListener((request, _sender, _sendResponse) => {
     if (request.hasOwnProperty('message')) {
       setIcon(request.message)
     }
   })
 
-chrome.browserAction.onClicked.addListener((tab) => {
-  handleCommand('toggle_mute')
+  chrome.browserAction.onClicked.addListener((_tab) => {
+    handleCommand(isMac, 'toggle_mute')
+  })
 })
 
-function handleCommand(command) {
+
+function handleCommand(isMac, command) {
   chrome.windows.getAll({ populate: true }, windowList => {
     let googleMeetTabs = getGoogleMeetTabs(windowList)
 
     if (googleMeetTabs.length > 0) {
-      processCommand(command, googleMeetTabs)
+      processCommand(isMac, command, googleMeetTabs)
     }
   })
 }
@@ -35,9 +41,9 @@ function getGoogleMeetTabs(windowList) {
   return googleMeetTabs
 }
 
-function processCommand(command, googleMeetTabs) {
+function processCommand(isMac, command, googleMeetTabs) {
   googleMeetTabs.forEach((tab) => {
-    chrome.tabs.sendMessage(tab.id, { command: command }, (response) => {
+    chrome.tabs.sendMessage(tab.id, {command, isMac}, (response) => {
       setIcon(response.message)
     })
   })
